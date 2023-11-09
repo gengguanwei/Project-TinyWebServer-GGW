@@ -36,5 +36,57 @@ bool Log::init (const char *file_name, int close_log, int log_buf_size, int spli
     struct tm *sys_tm = localtime(&t);
     struct tm my_tm = *sys_tm;
 
-    const char *p
+    const char *p = strrchr(file_name, '/');
+    char log_full_name[256] = {0};
+
+    if (p == NULL) {
+        snprintf(log_full_name, 255, "%d_%02d_%02d_%s", my_tm.tm_year + 1900, my_tm.tm_mon + 1, my_tm.tm_mday, file_name);
+    } else {
+        strcpy(log_name, p + 1);
+        strncpy(dir_name, file_name, p - file_name + 1);
+        snprintf(log_full_name, 255, "%s%d_%02d_%02d_%s", dir_name, my_tm.tm_year + 1900, my_tm.tm_mon + 1, my_tm.tm_mday, log_name);
+    }
+    m_today = my_tm.tm_mday;
+    m_fp = fopen(log_full_name, 'a');
+    if (m_fp == NULL) {
+        return false;
+    }
+    return true;
 } 
+
+void Log::write_log (int level, const char *format, ...) {
+    struct timeval now = {0, 0};
+    gettimeofday(&now, NULL);
+    time_t t = now.tv_sec;
+    struct tm *sys_tm = localtime(&t);
+    struct tm my_tm = *sys_tm;
+    char s[16] = {0};
+    switch (level) {
+        case 0:
+            strcpy(s, "[debug]:");
+            break;
+        case 1:
+            strcpy(s, "[info]:");
+            break;
+        case 2:
+            strcpy(s, "[warn]:");
+            break;
+        case 3:
+            strcpy(s, "[erro]:");
+            break;
+        default:
+            strcpy(s, "[info]:");
+            break;
+    }
+    m_mutex.lock();
+    m_count++;
+
+    if (m_today != my_tm.tm_mday || m_count % m_split_lines == 0) {
+        char new_log[256] = {0};
+        fflush(m_fp);
+        fclose(m_fp);
+        char tail[16] = {0};
+
+        snprintf(tail, 16, "%d")
+    }
+}
